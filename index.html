@@ -1,231 +1,202 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>تولدت مبارک سوگل 💖</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>سوگل 🎉 3D Surprize</title>
 <style>
-body, html{margin:0;padding:0;height:100%;overflow:hidden;font-family:"Vazirmatn",sans-serif;background:#111;}
-#stage{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;transition:all 0.3s;}
-.card{background:rgba(0,0,0,0.35);padding:30px 40px;border-radius:20px;text-align:center;backdrop-filter:blur(6px);box-shadow:0 10px 25px rgba(0,0,0,0.7);transition:all 0.5s;}
-h1{font-size:2.2rem;margin:0;animation:fadeIn 1s ease;}
-.name{font-size:2.6rem;font-weight:800;color:#ffcc00;margin:10px 0;animation:fadeIn 1.2s ease;}
-p{margin:8px 0 15px;color:#cfd8e3a8;animation:fadeIn 1.4s ease;}
-.btn{padding:12px 20px;border:none;border-radius:12px;font-weight:700;background:linear-gradient(90deg,#ffb86b,#ff6b6b);cursor:pointer;color:#111;font-size:1rem;box-shadow:0 6px 18px rgba(255,107,107,0.18);transition:all 0.3s;}
-.btn:hover{transform:scale(1.05);}
-#confetti, #gameCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;}
-.balloon{position:absolute;bottom:-200px;width:70px;height:100px;border-radius:60px 60px 40px 40px/70px 70px 40px 40px;transform-origin:center bottom;animation:floatUp linear infinite;opacity:0.95;display:flex;align-items:flex-end;justify-content:center;}
-.string{width:2px;height:60px;background:rgba(255,255,255,0.12);margin-bottom:-20px;border-radius:2px;}
-@keyframes floatUp{0%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-10px) rotate(4deg);}100%{transform:translateY(-130vh) rotate(-4deg);}}
-.typed{display:inline-block;border-right:3px solid #fff;padding-right:6px;}
-#score{position:absolute;top:15px;left:15px;font-size:1.4rem;font-weight:bold;color:#fff;z-index:51;}
-@keyframes fadeIn{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
+body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:'Vazirmatn',sans-serif;}
+#overlay{position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;text-align:center;}
+h1{font-size:3rem;margin:0 0 10px;text-shadow:0 0 15px #ff4d6d;}
+p{font-size:1.4rem;margin:0 0 20px;color:#ffd76b;text-shadow:0 0 12px #ffd76b;}
+button{padding:14px 28px;font-size:1.2rem;font-weight:700;background:linear-gradient(90deg,#ff6b6b,#ffb86b);border:none;border-radius:16px;cursor:pointer;color:#111;box-shadow:0 6px 20px rgba(255,107,107,0.3);}
 </style>
 </head>
 <body>
 
-<canvas id="confetti"></canvas>
-<canvas id="gameCanvas"></canvas>
-
-<div id="score">هدایا جمع شده: 0</div>
-
-<div id="stage">
-  <div class="card" id="card">
-    <h1>یه سورپرایز برای سوگل 💖</h1>
-    <div class="name" id="typedText"><span class="typed">سوگل</span></div>
-    <p id="msg">لمس کن تا شروع کنم 🎉</p>
-    <button class="btn" id="startBtn">سورپرایز کن 🎉</button>
-  </div>
+<div id="overlay">
+  <h1>سوگل 🎉</h1>
+  <p>تولدت مبارک! ❤️ لمس کن تا شروع کنیم</p>
+  <button id="startBtn">شروع 3D 🎉</button>
 </div>
 
-<audio id="song" preload="auto">
-  <source src="music.mp3" type="audio/mpeg">
-</audio>
+<audio id="song" preload="auto"><source src="music.mp3" type="audio/mpeg"></audio>
+<audio id="popSound" preload="auto"><source src="pop.mp3" type="audio/mpeg"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-const RECIPIENT="سوگل 💖";
+const RECIPIENT="سوگل";
 const MESSAGE="سوگل جونم تولدت مبارک ❤️ تویی من 💖 ببخشید ناراحتت کردم عزیزه دلم";
 
-const startBtn=document.getElementById('startBtn');
 const song=document.getElementById('song');
-const nameDisplay=document.getElementById('typedText');
-const msgP=document.getElementById('msg');
-const confettiCanvas=document.getElementById('confetti');
-const gameCanvas=document.getElementById('gameCanvas');
-const card=document.getElementById('card');
-const scoreDiv=document.getElementById('score');
+const popSound=document.getElementById('popSound');
+const overlay=document.getElementById('overlay');
+const startBtn=document.getElementById('startBtn');
 
-let score=0;
-const gifts=[];
-const ctx=gameCanvas.getContext('2d');
+// صحنه، دوربین، renderer
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000);
+camera.position.set(0,0,100);
 
-function typeText(el,text,delay=80){
-  el.textContent="";
-  return new Promise(res=>{
-    let i=0;
-    const t=setInterval(()=>{
-      el.textContent+=text[i++];
-      if(i>=text.length){ clearInterval(t); el.classList.remove('typed'); res();}
-    },delay);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setClearColor(0x111111,1);
+document.body.appendChild(renderer.domElement);
+
+// نورپردازی
+const ambientLight=new THREE.AmbientLight(0xffffff,0.6);
+scene.add(ambientLight);
+const directionalLight=new THREE.DirectionalLight(0xff6b6b,0.8);
+directionalLight.position.set(100,200,100);
+scene.add(directionalLight);
+
+// کنترل دوربین
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableZoom=false; controls.enablePan=false; controls.enableRotate=false;
+
+// responsive
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+const hearts=[],particles=[],balloons=[],confetti3D=[];
+
+// مدل قلب 3D
+function createHeart(size=5){
+  const points=[];
+  for(let t=0;t<Math.PI*2;t+=0.1){
+    const x=16*Math.pow(Math.sin(t),3);
+    const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+    points.push(new THREE.Vector2(x*size*0.05,y*size*0.05));
+  }
+  const geometry=new THREE.LatheGeometry(points,32);
+  const material=new THREE.MeshStandardMaterial({
+    color:0xff4d6d,
+    metalness:0.4,
+    roughness:0.3,
+    emissive:0xff4d6d,
+    emissiveIntensity:0.5
   });
+  const mesh=new THREE.Mesh(geometry,material);
+  return mesh;
 }
 
-function spawnBalloons(){
-  const colors=["#ff7eb9","#7afcff","#ffd86b","#b28dff","#ff8a65"];
-  for(let i=0;i<8;i++){
-    const b=document.createElement('div');
-    b.className='balloon';
-    b.style.left=(5+Math.random()*90)+"%";
-    b.style.width=(60+Math.random()*60)+"px";
-    b.style.height=(80+Math.random()*80)+"px";
-    b.style.background=colors[Math.floor(Math.random()*colors.length)];
-    b.style.animationDuration=(12+Math.random()*8)+"s";
-    b.innerHTML='<div class="string"></div>';
-    document.body.appendChild(b);
-    setTimeout(()=>b.remove(),30000);
+// قلب‌ها
+for(let i=0;i<12;i++){
+  const h=createHeart(5+Math.random()*3);
+  h.position.set((Math.random()-0.5)*100,(Math.random()-0.5)*60,(Math.random()-0.5)*50);
+  h.rotation.set(Math.random()*0.5,Math.random()*0.5,Math.random()*0.5);
+  scene.add(h);
+  hearts.push({mesh:h,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,vz:(Math.random()-0.5)*0.5});
+}
+
+// افکت particle
+function sparkEffect(pos){
+  for(let j=0;j<20;j++){
+    const geom=new THREE.SphereGeometry(0.5,6,6);
+    const mat=new THREE.MeshStandardMaterial({color:0xffff00,emissive:0xffff00,transparent:true,opacity:1});
+    const m=new THREE.Mesh(geom,mat);
+    m.position.copy(pos);
+    scene.add(m);
+    const vel=new THREE.Vector3((Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5);
+    particles.push({mesh:m,vel:vel,life:1});
   }
 }
 
-function startConfetti(){
-  const ctx=confettiCanvas.getContext('2d');
-  confettiCanvas.width=innerWidth;
-  confettiCanvas.height=innerHeight;
-  const pieces=[];
-  const colors=["#ff6b6b","#ffd76b","#7afcff","#b28dff","#ffffff"];
-  for(let i=0;i<160;i++){
-    pieces.push({
-      x:Math.random()*confettiCanvas.width,
-      y:Math.random()*confettiCanvas.height-confettiCanvas.height,
-      w:6+Math.random()*8,
-      h:8+Math.random()*10,
-      vx:-2+Math.random()*4,
-      vy:2+Math.random()*6,
-      c:colors[Math.floor(Math.random()*colors.length)],
-      rot:Math.random()*360,
-      rotspeed:-5+Math.random()*10
-    });
+// بالون‌ها
+function spawnBalloons3D(count=10){
+  for(let i=0;i<count;i++){
+    const geom=new THREE.CylinderGeometry(3,4,10,12);
+    const mat=new THREE.MeshStandardMaterial({color:Math.random()*0xffffff,emissive:0xffd76b,metalness:0.3,roughness:0.4});
+    const balloon=new THREE.Mesh(geom,mat);
+    balloon.position.set((Math.random()-0.5)*100,-60,(Math.random()-0.5)*50);
+    scene.add(balloon);
+    balloons.push({mesh:balloon,vx:0,vy:0.3+Math.random()*0.2});
   }
-  let raf;
-  function frame(){
-    ctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
-    for(const p of pieces){
-      p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotspeed;
-      ctx.save();
-      ctx.translate(p.x,p.y);
-      ctx.rotate(p.rot*Math.PI/180);
-      ctx.fillStyle=p.c;
-      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
-      ctx.restore();
-      if(p.y>confettiCanvas.height+40){p.y=-20;p.x=Math.random()*confettiCanvas.width;}
-    }
-    raf=requestAnimationFrame(frame);
+}
+
+// کنفتی
+function spawnConfetti3D(count=100){
+  for(let i=0;i<count;i++){
+    const geom=new THREE.BoxGeometry(0.5,0.5,0.2);
+    const mat=new THREE.MeshStandardMaterial({color:Math.random()*0xffffff,emissive:Math.random()*0xffffff});
+    const cube=new THREE.Mesh(geom,mat);
+    cube.position.set((Math.random()-0.5)*100,50+(Math.random()*50),(Math.random()-0.5)*50);
+    const vel=new THREE.Vector3((Math.random()-0.5)*0.5,-Math.random()*1.5,(Math.random()-0.5)*0.5);
+    scene.add(cube);
+    confetti3D.push({mesh:cube,vel:vel});
   }
-  frame();
-  setTimeout(()=>cancelAnimationFrame(raf),30000);
 }
 
-function goFullscreen(){
-  const el=document.documentElement;
-  if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
-  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
-}
-
-function drawHeart(ctx,x,y,size){
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.beginPath();
-  const topCurveHeight=size*0.3;
-  ctx.moveTo(0, topCurveHeight);
-  ctx.bezierCurveTo(0,-size*0.35, -size,-size*0.35, -size,topCurveHeight);
-  ctx.bezierCurveTo(-size,size*0.6, 0,size*0.9,0,size);
-  ctx.bezierCurveTo(0,size*0.9, size,size*0.6, size,topCurveHeight);
-  ctx.bezierCurveTo(size,-size*0.35,0,-size*0.35,0,topCurveHeight);
-  ctx.closePath();
-  ctx.fillStyle="#ff4d6d";
-  ctx.fill();
-  ctx.fillStyle="#fff";
-  ctx.font=`${size/3}px Vazirmatn`;
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-  ctx.fillText("سوگل",0,size*0.15);
-  ctx.restore();
-}
-
-function drawGame(){
-  ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
-  gifts.forEach(g=>{
-    drawHeart(ctx,g.x,g.y,g.size);
+// حرکت قلب‌ها، particle، بالون و کنفتی
+function animate(){
+  requestAnimationFrame(animate);
+  hearts.forEach(h=>{
+    h.mesh.position.x+=h.vx; h.mesh.position.y+=h.vy; h.mesh.position.z+=h.vz;
+    h.mesh.rotation.x+=0.01; h.mesh.rotation.y+=0.01;
+    if(h.mesh.position.x>50||h.mesh.position.x<-50) h.vx*=-1;
+    if(h.mesh.position.y>50||h.mesh.position.y<-50) h.vy*=-1;
+    if(h.mesh.position.z>50||h.mesh.position.z<-50) h.vz*=-1;
   });
+  particles.forEach((p,i)=>{
+    p.life-=0.02;
+    if(p.life<=0){ scene.remove(p.mesh); particles.splice(i,1);}
+    else{ p.mesh.position.add(p.vel); p.mesh.material.opacity=p.life;}
+  });
+  balloons.forEach(b=>{
+    b.mesh.position.y+=b.vy;
+    b.mesh.position.x+=Math.sin(Date.now()/500)*0.05;
+    if(b.mesh.position.y>60) b.mesh.position.y=-60;
+  });
+  confetti3D.forEach((c,i)=>{
+    c.mesh.position.add(c.vel);
+    c.vel.y-=0.01;
+    if(c.mesh.position.y<-60){ scene.remove(c.mesh); confetti3D.splice(i,1);}
+  });
+  renderer.render(scene,camera);
+}
+animate();
+
+// تایپ پیام
+function typeMessage(message,delay=50){
+  overlay.innerHTML="<h1>"+RECIPIENT+"</h1><p id='typedMsg'></p>";
+  const typedMsg=document.getElementById('typedMsg');
+  typedMsg.textContent="";
+  let i=0;
+  const t=setInterval(()=>{
+    typedMsg.textContent+=message[i++];
+    if(i>=message.length) clearInterval(t);
+  },delay);
 }
 
-function startGame(){
-  gameCanvas.width=window.innerWidth;
-  gameCanvas.height=window.innerHeight;
-  score=0;
-  gifts.length=0;
-  scoreDiv.textContent="هدایا جمع شده: 0";
-  
-  for(let i=0;i<10;i++){
-    gifts.push({
-      x:Math.random()*gameCanvas.width,
-      y:Math.random()*gameCanvas.height,
-      size:40 + Math.random()*20
-    });
-  }
+// کلیک روی قلب‌ها
+renderer.domElement.addEventListener('pointerdown',(event)=>{
+  const mouse=new THREE.Vector2();
+  mouse.x=(event.clientX/window.innerWidth)*2-1;
+  mouse.y=-(event.clientY/window.innerHeight)*2+1;
+  const raycaster=new THREE.Raycaster();
+  raycaster.setFromCamera(mouse,camera);
+  const intersects=raycaster.intersectObjects(hearts.map(h=>h.mesh));
+  intersects.forEach(i=>{
+    sparkEffect(i.object.position);
+    const index=hearts.findIndex(h=>h.mesh===i.object);
+    if(index>-1){ scene.remove(hearts[index].mesh); hearts.splice(index,1);}
+  });
+});
 
-  drawGame();
-  gameCanvas.style.pointerEvents='auto';
-  gameCanvas.addEventListener('click',clickHandler);
-}
-
-function clickHandler(e){
-  const rect=gameCanvas.getBoundingClientRect();
-  const x=e.clientX-rect.left;
-  const y=e.clientY-rect.top;
-  for(let i=gifts.length-1;i>=0;i--){
-    const g=gifts[i];
-    if(Math.sqrt((x-g.x)*(x-g.x) + (y-g.y)*(y-g.y)) < g.size*0.7){
-      gifts.splice(i,1);
-      score++;
-      scoreDiv.textContent="هدایا جمع شده: "+score;
-      if(score>=10){
-        gameCanvas.removeEventListener('click',clickHandler);
-        gameCanvas.style.pointerEvents='none';
-        startSequence();
-      }
-    }
-  }
-  drawGame();
-}
-
-async function startSequence(){
-  startBtn.disabled=true;
-  startBtn.textContent="در حال آماده‌سازی...";
-
-  goFullscreen();
-  card.animate([{transform:'scale(0.95)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});
-
-  // تلاش برای پلی موزیک، اگر iOS بلاک کرد ادامه بده
-  try{
-    await song.play();
-  }catch(e){
-    console.warn("iOS autoplay blocked, ادامه بدون موزیک", e);
-  }
-
-  spawnBalloons();
-  startConfetti();
-
-  nameDisplay.textContent=""; nameDisplay.classList.add('typed');
-  await typeText(nameDisplay,RECIPIENT,120);
-  msgP.textContent="";
-  await typeText(msgP,MESSAGE,55);
-
-  startBtn.textContent="دوباره 🎉"; startBtn.disabled=false;
-}
-
+// شروع نهایی
 startBtn.addEventListener('click',()=>{
-  startGame();
+  overlay.style.display='none';
+  song.play().catch(()=>{});
+  spawnBalloons3D(12);
+  spawnConfetti3D(200);
+  typeMessage(MESSAGE);
 });
 </script>
+
 </body>
 </html>
