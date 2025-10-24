@@ -21,21 +21,11 @@ button{padding:14px 28px;font-size:1.2rem;font-weight:700;background:linear-grad
 </div>
 
 <audio id="song" preload="auto"><source src="music.mp3" type="audio/mpeg"></audio>
-<audio id="popSound" preload="auto"><source src="pop.mp3" type="audio/mpeg"></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
-
 <script>
-const RECIPIENT="سوگل";
-const MESSAGE="سوگل جونم تولدت مبارک ❤️ تویی من 💖 ببخشید ناراحتت کردم عزیزه دلم";
-
-const song=document.getElementById('song');
-const popSound=document.getElementById('popSound');
-const overlay=document.getElementById('overlay');
-const startBtn=document.getElementById('startBtn');
-
-// صحنه، دوربین، renderer
+// صحنه، دوربین و renderer
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000);
 camera.position.set(0,0,100);
@@ -52,20 +42,24 @@ const directionalLight=new THREE.DirectionalLight(0xff6b6b,0.8);
 directionalLight.position.set(100,200,100);
 scene.add(directionalLight);
 
-// کنترل دوربین
+// کنترل دوربین برای تست (غیر فعال می‌کنیم برای تجربه نهایی)
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
-controls.enableZoom=false; controls.enablePan=false; controls.enableRotate=false;
+controls.enableZoom=false;
+controls.enablePan=false;
+controls.enableRotate=false;
 
-// responsive
+// اندازه صفحه responsive
 window.addEventListener('resize',()=>{
   camera.aspect=window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
 });
 
-const hearts=[],particles=[],balloons=[],confetti3D=[];
-
-// مدل قلب 3D
+// آرایه قلب‌ها و particle‌ها
+const hearts=[];
+const particles=[];
+<script>
+// ایجاد یک هندسه قلب 3D ساده با LatheGeometry
 function createHeart(size=5){
   const points=[];
   for(let t=0;t<Math.PI*2;t+=0.1){
@@ -85,7 +79,7 @@ function createHeart(size=5){
   return mesh;
 }
 
-// قلب‌ها
+// اضافه کردن 12 قلب به صحنه
 for(let i=0;i<12;i++){
   const h=createHeart(5+Math.random()*3);
   h.position.set((Math.random()-0.5)*100,(Math.random()-0.5)*60,(Math.random()-0.5)*50);
@@ -94,20 +88,64 @@ for(let i=0;i<12;i++){
   hearts.push({mesh:h,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,vz:(Math.random()-0.5)*0.5});
 }
 
-// افکت particle
-function sparkEffect(pos){
-  for(let j=0;j<20;j++){
-    const geom=new THREE.SphereGeometry(0.5,6,6);
-    const mat=new THREE.MeshStandardMaterial({color:0xffff00,emissive:0xffff00,transparent:true,opacity:1});
-    const m=new THREE.Mesh(geom,mat);
-    m.position.copy(pos);
-    scene.add(m);
-    const vel=new THREE.Vector3((Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5);
-    particles.push({mesh:m,vel:vel,life:1});
-  }
-}
+// رندر loop با حرکت شناور و rotation
+function animate(){
+  requestAnimationFrame(animate);
 
-// بالون‌ها
+  hearts.forEach(h=>{
+    h.mesh.position.x+=h.vx;
+    h.mesh.position.y+=h.vy;
+    h.mesh.position.z+=h.vz;
+    h.mesh.rotation.x+=0.01;
+    h.mesh.rotation.y+=0.01;
+
+    // bounce بین محدوده
+    if(h.mesh.position.x>50||h.mesh.position.x<-50) h.vx*=-1;
+    if(h.mesh.position.y>50||h.mesh.position.y<-50) h.vy*=-1;
+    if(h.mesh.position.z>50||h.mesh.position.z<-50) h.vz*=-1;
+  });
+
+  // رندر particle ها
+  particles.forEach((p,i)=>{
+    p.life-=0.02;
+    if(p.life<=0){ scene.remove(p.mesh); particles.splice(i,1);}
+    else{
+      p.mesh.position.add(p.vel);
+      p.mesh.material.opacity=p.life;
+    }
+  });
+
+  renderer.render(scene,camera);
+}
+animate();
+
+// کلیک روی قلب‌ها
+renderer.domElement.addEventListener('pointerdown',(event)=>{
+  const mouse=new THREE.Vector2();
+  mouse.x=(event.clientX/window.innerWidth)*2-1;
+  mouse.y=-(event.clientY/window.innerHeight)*2+1;
+  const raycaster=new THREE.Raycaster();
+  raycaster.setFromCamera(mouse,camera);
+  const intersects=raycaster.intersectObjects(hearts.map(h=>h.mesh));
+  intersects.forEach(i=>{
+    // particle burst
+    for(let j=0;j<20;j++){
+      const geom=new THREE.SphereGeometry(0.5,6,6);
+      const mat=new THREE.MeshStandardMaterial({color:0xffff00,emissive:0xffff00,transparent:true,opacity:1});
+      const m=new THREE.Mesh(geom,mat);
+      m.position.copy(i.object.position);
+      scene.add(m);
+      const vel=new THREE.Vector3((Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5);
+      particles.push({mesh:m,vel:vel,life:1});
+    }
+    // حذف قلب
+    const index=hearts.findIndex(h=>h.mesh===i.object);
+    if(index>-1){ scene.remove(hearts[index].mesh); hearts.splice(index,1);}
+  });
+});
+<script>
+// بالون‌های 3D
+const balloons=[];
 function spawnBalloons3D(count=10){
   for(let i=0;i<count;i++){
     const geom=new THREE.CylinderGeometry(3,4,10,12);
@@ -119,7 +157,17 @@ function spawnBalloons3D(count=10){
   }
 }
 
-// کنفتی
+// حرکت بالون‌ها
+function animateBalloons(){
+  balloons.forEach(b=>{
+    b.mesh.position.y+=b.vy;
+    b.mesh.position.x+=Math.sin(Date.now()/500)*0.05;
+    if(b.mesh.position.y>60) b.mesh.position.y=-60;
+  });
+}
+
+// کنفتی 3D
+const confetti3D=[];
 function spawnConfetti3D(count=100){
   for(let i=0;i<count;i++){
     const geom=new THREE.BoxGeometry(0.5,0.5,0.2);
@@ -132,8 +180,18 @@ function spawnConfetti3D(count=100){
   }
 }
 
-// حرکت قلب‌ها، particle، بالون و کنفتی
-function animate(){
+// حرکت کنفتی
+function animateConfetti(){
+  confetti3D.forEach((c,i)=>{
+    c.mesh.position.add(c.vel);
+    c.vel.y-=0.01; // gravity
+    if(c.mesh.position.y<-60){ scene.remove(c.mesh); confetti3D.splice(i,1);}
+  });
+}
+
+// اضافه کردن افکت‌ها به رندر loop
+const originalAnimate=animate;
+animate=function(){
   requestAnimationFrame(animate);
   hearts.forEach(h=>{
     h.mesh.position.x+=h.vx; h.mesh.position.y+=h.vy; h.mesh.position.z+=h.vz;
@@ -147,56 +205,37 @@ function animate(){
     if(p.life<=0){ scene.remove(p.mesh); particles.splice(i,1);}
     else{ p.mesh.position.add(p.vel); p.mesh.material.opacity=p.life;}
   });
-  balloons.forEach(b=>{
-    b.mesh.position.y+=b.vy;
-    b.mesh.position.x+=Math.sin(Date.now()/500)*0.05;
-    if(b.mesh.position.y>60) b.mesh.position.y=-60;
-  });
-  confetti3D.forEach((c,i)=>{
-    c.mesh.position.add(c.vel);
-    c.vel.y-=0.01;
-    if(c.mesh.position.y<-60){ scene.remove(c.mesh); confetti3D.splice(i,1);}
-  });
-  renderer.render(scene,camera);
-}
+  animateBalloons();
+  animateConfetti();
+  originalAnimate();
+};
 animate();
 
-// تایپ پیام
-function typeMessage(message,delay=50){
+// تایپ پیام عاشقانه روی صفحه
+const overlay=document.getElementById('overlay');
+function typeMessage3D(message,delay=50){
   overlay.innerHTML="<h1>"+RECIPIENT+"</h1><p id='typedMsg'></p>";
   const typedMsg=document.getElementById('typedMsg');
   typedMsg.textContent="";
   let i=0;
   const t=setInterval(()=>{
     typedMsg.textContent+=message[i++];
-    if(i>=message.length) clearInterval(t);
+    if(i>=message.length){ clearInterval(t);}
   },delay);
 }
 
-// کلیک روی قلب‌ها
-renderer.domElement.addEventListener('pointerdown',(event)=>{
-  const mouse=new THREE.Vector2();
-  mouse.x=(event.clientX/window.innerWidth)*2-1;
-  mouse.y=-(event.clientY/window.innerHeight)*2+1;
-  const raycaster=new THREE.Raycaster();
-  raycaster.setFromCamera(mouse,camera);
-  const intersects=raycaster.intersectObjects(hearts.map(h=>h.mesh));
-  intersects.forEach(i=>{
-    sparkEffect(i.object.position);
-    const index=hearts.findIndex(h=>h.mesh===i.object);
-    if(index>-1){ scene.remove(hearts[index].mesh); hearts.splice(index,1);}
-  });
-});
-
-// شروع نهایی
+// شروع نهایی WebGL
 startBtn.addEventListener('click',()=>{
   overlay.style.display='none';
   song.play().catch(()=>{});
   spawnBalloons3D(12);
   spawnConfetti3D(200);
-  typeMessage(MESSAGE);
+  typeMessage3D("سوگل جونم تولدت مبارک ❤️ تویی من 💖 ببخشید ناراحتت کردم عزیزه دلم");
 });
 </script>
-
+  spawnConfetti3D(200);
+  typeMessage3D("سوگل جونم تولدت مبارک ❤️ تویی من 💖 ببخشید ناراحتت کردم عزیزه دلم");
+});
+</script>
 </body>
 </html>
