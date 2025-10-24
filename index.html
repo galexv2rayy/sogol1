@@ -13,15 +13,21 @@
   p{margin:8px 0 15px;color:#cfd8e3a8;}
   .btn{padding:12px 20px;border:none;border-radius:12px;font-weight:700;background:linear-gradient(90deg,#ffb86b,#ff6b6b);cursor:pointer;color:#111;font-size:1rem;box-shadow:0 6px 18px rgba(255,107,107,0.18);}
   #confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;}
-  /* balloons */
   .balloon{position:absolute;bottom:-200px;width:70px;height:100px;border-radius:60px 60px 40px 40px/70px 70px 40px 40px;transform-origin:center bottom;animation:floatUp linear infinite;opacity:0.95;display:flex;align-items:flex-end;justify-content:center;}
   .string{width:2px;height:60px;background:rgba(255,255,255,0.12);margin-bottom:-20px;border-radius:2px;}
   @keyframes floatUp{0%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-10px) rotate(4deg);}100%{transform:translateY(-130vh) rotate(-4deg);}}
   .typed{display:inline-block;border-right:3px solid #fff;padding-right:6px;}
+  #gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:50;pointer-events:none;}
+  #score{position:absolute;top:15px;left:15px;font-size:1.4rem;font-weight:bold;color:#fff;z-index:51;}
 </style>
 </head>
 <body>
+
 <canvas id="confetti"></canvas>
+<canvas id="gameCanvas"></canvas>
+
+<div id="score">هدایا جمع شده: 0</div>
+
 <div id="stage">
   <div class="card" id="card">
     <h1>یه سورپرایز برای سوگل 💖</h1>
@@ -32,22 +38,26 @@
 </div>
 
 <audio id="song" preload="auto">
-  <source src="happy_birthday.mp3" type="audio/mpeg">
-  مرورگر شما از فرمت mp3 پشتیبانی نمی‌کند.
+  <source src="music.mp3" type="audio/mpeg">
 </audio>
 
 <script>
 const RECIPIENT="سوگل 💖";
-const MESSAGE="تولدت مبارک سوگل! خیلی دوستت دارم ❤️";
+const MESSAGE="سوگل جونم تولدت مبارک ❤️ تویی من 💖 ببخشید ناراحتت کردم عزیزه دلم";
 
 const startBtn=document.getElementById('startBtn');
 const song=document.getElementById('song');
 const nameDisplay=document.getElementById('typedText');
 const msgP=document.getElementById('msg');
 const confettiCanvas=document.getElementById('confetti');
+const gameCanvas=document.getElementById('gameCanvas');
 const card=document.getElementById('card');
+const scoreDiv=document.getElementById('score');
 
-// typed effect
+let score=0;
+const gifts=[];
+const ctx=gameCanvas.getContext('2d');
+
 function typeText(el,text,delay=80){
   el.textContent="";
   return new Promise(res=>{
@@ -59,7 +69,6 @@ function typeText(el,text,delay=80){
   });
 }
 
-// balloons
 function spawnBalloons(){
   const colors=["#ff7eb9","#7afcff","#ffd86b","#b28dff","#ff8a65"];
   for(let i=0;i<8;i++){
@@ -76,7 +85,6 @@ function spawnBalloons(){
   }
 }
 
-// confetti
 function startConfetti(){
   const ctx=confettiCanvas.getContext('2d');
   confettiCanvas.width=innerWidth;
@@ -115,11 +123,62 @@ function startConfetti(){
   setTimeout(()=>cancelAnimationFrame(raf),30000);
 }
 
-// fullscreen helper
 function goFullscreen(){
   const el=document.documentElement;
   if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
   else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+}
+
+function startGame(){
+  gameCanvas.width=window.innerWidth;
+  gameCanvas.height=window.innerHeight;
+  score=0;
+  gifts.length=0;
+  scoreDiv.textContent="هدایا جمع شده: 0";
+  
+  for(let i=0;i<10;i++){
+    gifts.push({
+      x:Math.random()*gameCanvas.width,
+      y:Math.random()*gameCanvas.height,
+      size:30 + Math.random()*20
+    });
+  }
+
+  drawGame();
+  gameCanvas.style.pointerEvents='auto';
+  gameCanvas.addEventListener('click',clickHandler);
+}
+
+function drawGame(){
+  ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
+  gifts.forEach(g=>{
+    ctx.fillStyle="#ffcc00";
+    ctx.beginPath();
+    ctx.arc(g.x,g.y,g.size/2,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function clickHandler(e){
+  const rect=gameCanvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+  for(let i=gifts.length-1;i>=0;i--){
+    const g=gifts[i];
+    const dx=g.x-x;
+    const dy=g.y-y;
+    if(Math.sqrt(dx*dx+dy*dy)<g.size/2){
+      gifts.splice(i,1);
+      score++;
+      scoreDiv.textContent="هدایا جمع شده: "+score;
+      if(score>=10){
+        gameCanvas.removeEventListener('click',clickHandler);
+        gameCanvas.style.pointerEvents='none';
+        startSequence();
+      }
+    }
+  }
+  drawGame();
 }
 
 async function startSequence(){
@@ -138,8 +197,7 @@ async function startSequence(){
 }
 
 startBtn.addEventListener('click',()=>{
-  song.currentTime=0;
-  startSequence();
+  startGame();
 });
 </script>
 </body>
