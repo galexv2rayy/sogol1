@@ -6,19 +6,20 @@
 <title>تولدت مبارک سوگل 💖</title>
 <style>
   body, html{margin:0;padding:0;height:100%;overflow:hidden;font-family:"Vazirmatn",sans-serif;background:#111;}
-  #stage{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;}
-  .card{background:rgba(0,0,0,0.35);padding:30px 40px;border-radius:20px;text-align:center;backdrop-filter:blur(6px);box-shadow:0 10px 25px rgba(0,0,0,0.7);}
-  h1{font-size:2.2rem;margin:0;}
-  .name{font-size:2.6rem;font-weight:800;color:#ffcc00;margin:10px 0;}
-  p{margin:8px 0 15px;color:#cfd8e3a8;}
-  .btn{padding:12px 20px;border:none;border-radius:12px;font-weight:700;background:linear-gradient(90deg,#ffb86b,#ff6b6b);cursor:pointer;color:#111;font-size:1rem;box-shadow:0 6px 18px rgba(255,107,107,0.18);}
-  #confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;}
+  #stage{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;transition:all 0.3s;}
+  .card{background:rgba(0,0,0,0.35);padding:30px 40px;border-radius:20px;text-align:center;backdrop-filter:blur(6px);box-shadow:0 10px 25px rgba(0,0,0,0.7);transition:all 0.5s;}
+  h1{font-size:2.2rem;margin:0;animation:fadeIn 1s ease;}
+  .name{font-size:2.6rem;font-weight:800;color:#ffcc00;margin:10px 0;animation:fadeIn 1.2s ease;}
+  p{margin:8px 0 15px;color:#cfd8e3a8;animation:fadeIn 1.4s ease;}
+  .btn{padding:12px 20px;border:none;border-radius:12px;font-weight:700;background:linear-gradient(90deg,#ffb86b,#ff6b6b);cursor:pointer;color:#111;font-size:1rem;box-shadow:0 6px 18px rgba(255,107,107,0.18);transition:all 0.3s;}
+  .btn:hover{transform:scale(1.05);}
+  #confetti, #gameCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;}
   .balloon{position:absolute;bottom:-200px;width:70px;height:100px;border-radius:60px 60px 40px 40px/70px 70px 40px 40px;transform-origin:center bottom;animation:floatUp linear infinite;opacity:0.95;display:flex;align-items:flex-end;justify-content:center;}
   .string{width:2px;height:60px;background:rgba(255,255,255,0.12);margin-bottom:-20px;border-radius:2px;}
   @keyframes floatUp{0%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-10px) rotate(4deg);}100%{transform:translateY(-130vh) rotate(-4deg);}}
   .typed{display:inline-block;border-right:3px solid #fff;padding-right:6px;}
-  #gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:50;pointer-events:none;}
   #score{position:absolute;top:15px;left:15px;font-size:1.4rem;font-weight:bold;color:#fff;z-index:51;}
+  @keyframes fadeIn{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 <body>
@@ -183,9 +184,7 @@ function clickHandler(e){
   const y=e.clientY-rect.top;
   for(let i=gifts.length-1;i>=0;i--){
     const g=gifts[i];
-    const dx=g.x-x;
-    const dy=g.y-y;
-    if(Math.sqrt(dx*dx+dy*dy)<g.size){
+    if(Math.sqrt((x-g.x)*(x-g.x) + (y-g.y)*(y-g.y)) < g.size*0.7){
       gifts.splice(i,1);
       score++;
       scoreDiv.textContent="هدایا جمع شده: "+score;
