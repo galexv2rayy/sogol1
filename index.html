@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>تولدت مبارک سوگل 💖</title>
+<style>
+  body, html{margin:0;padding:0;height:100%;overflow:hidden;font-family:"Vazirmatn",sans-serif;background:#111;}
+  #stage{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;}
+  .card{background:rgba(0,0,0,0.35);padding:30px 40px;border-radius:20px;text-align:center;backdrop-filter:blur(6px);box-shadow:0 10px 25px rgba(0,0,0,0.7);}
+  h1{font-size:2.2rem;margin:0;}
+  .name{font-size:2.6rem;font-weight:800;color:#ffcc00;margin:10px 0;}
+  p{margin:8px 0 15px;color:#cfd8e3a8;}
+  .btn{padding:12px 20px;border:none;border-radius:12px;font-weight:700;background:linear-gradient(90deg,#ffb86b,#ff6b6b);cursor:pointer;color:#111;font-size:1rem;box-shadow:0 6px 18px rgba(255,107,107,0.18);}
+  #confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;}
+  /* balloons */
+  .balloon{position:absolute;bottom:-200px;width:70px;height:100px;border-radius:60px 60px 40px 40px/70px 70px 40px 40px;transform-origin:center bottom;animation:floatUp linear infinite;opacity:0.95;display:flex;align-items:flex-end;justify-content:center;}
+  .string{width:2px;height:60px;background:rgba(255,255,255,0.12);margin-bottom:-20px;border-radius:2px;}
+  @keyframes floatUp{0%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-10px) rotate(4deg);}100%{transform:translateY(-130vh) rotate(-4deg);}}
+  .typed{display:inline-block;border-right:3px solid #fff;padding-right:6px;}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div id="stage">
+  <div class="card" id="card">
+    <h1>یه سورپرایز برای سوگل 💖</h1>
+    <div class="name" id="typedText"><span class="typed">سوگل</span></div>
+    <p id="msg">لمس کن تا شروع کنم 🎉</p>
+    <button class="btn" id="startBtn">سورپرایز کن 🎉</button>
+  </div>
+</div>
+
+<audio id="song" preload="auto">
+  <source src="happy_birthday.mp3" type="audio/mpeg">
+  مرورگر شما از فرمت mp3 پشتیبانی نمی‌کند.
+</audio>
+
+<script>
+const RECIPIENT="سوگل 💖";
+const MESSAGE="تولدت مبارک سوگل! خیلی دوستت دارم ❤️";
+
+const startBtn=document.getElementById('startBtn');
+const song=document.getElementById('song');
+const nameDisplay=document.getElementById('typedText');
+const msgP=document.getElementById('msg');
+const confettiCanvas=document.getElementById('confetti');
+const card=document.getElementById('card');
+
+// typed effect
+function typeText(el,text,delay=80){
+  el.textContent="";
+  return new Promise(res=>{
+    let i=0;
+    const t=setInterval(()=>{
+      el.textContent+=text[i++];
+      if(i>=text.length){ clearInterval(t); el.classList.remove('typed'); res();}
+    },delay);
+  });
+}
+
+// balloons
+function spawnBalloons(){
+  const colors=["#ff7eb9","#7afcff","#ffd86b","#b28dff","#ff8a65"];
+  for(let i=0;i<8;i++){
+    const b=document.createElement('div');
+    b.className='balloon';
+    b.style.left=(5+Math.random()*90)+"%";
+    b.style.width=(60+Math.random()*60)+"px";
+    b.style.height=(80+Math.random()*80)+"px";
+    b.style.background=colors[Math.floor(Math.random()*colors.length)];
+    b.style.animationDuration=(12+Math.random()*8)+"s";
+    b.innerHTML='<div class="string"></div>';
+    document.body.appendChild(b);
+    setTimeout(()=>b.remove(),30000);
+  }
+}
+
+// confetti
+function startConfetti(){
+  const ctx=confettiCanvas.getContext('2d');
+  confettiCanvas.width=innerWidth;
+  confettiCanvas.height=innerHeight;
+  const pieces=[];
+  const colors=["#ff6b6b","#ffd76b","#7afcff","#b28dff","#ffffff"];
+  for(let i=0;i<160;i++){
+    pieces.push({
+      x:Math.random()*confettiCanvas.width,
+      y:Math.random()*confettiCanvas.height-confettiCanvas.height,
+      w:6+Math.random()*8,
+      h:8+Math.random()*10,
+      vx:-2+Math.random()*4,
+      vy:2+Math.random()*6,
+      c:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*360,
+      rotspeed:-5+Math.random()*10
+    });
+  }
+  let raf;
+  function frame(){
+    ctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    for(const p of pieces){
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotspeed;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.c;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+      if(p.y>confettiCanvas.height+40){p.y=-20;p.x=Math.random()*confettiCanvas.width;}
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  frame();
+  setTimeout(()=>cancelAnimationFrame(raf),30000);
+}
+
+// fullscreen helper
+function goFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+}
+
+async function startSequence(){
+  startBtn.disabled=true;
+  startBtn.textContent="در حال آماده‌سازی...";
+  goFullscreen();
+  card.animate([{transform:'scale(0.95)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});
+  try{await song.play();}catch(e){console.warn("autoplay blocked",e);}
+  spawnBalloons();
+  startConfetti();
+  nameDisplay.textContent="";nameDisplay.classList.add('typed');
+  await typeText(nameDisplay,RECIPIENT,120);
+  msgP.textContent="";
+  await typeText(msgP,MESSAGE,55);
+  startBtn.textContent="دوباره 🎉";startBtn.disabled=false;
+}
+
+startBtn.addEventListener('click',()=>{
+  song.currentTime=0;
+  startSequence();
+});
+</script>
+</body>
+</html>
