@@ -129,6 +129,34 @@ function goFullscreen(){
   else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
 }
 
+function drawHeart(ctx,x,y,size){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.beginPath();
+  const topCurveHeight=size*0.3;
+  ctx.moveTo(0, topCurveHeight);
+  ctx.bezierCurveTo(0,-size*0.35, -size,-size*0.35, -size,topCurveHeight);
+  ctx.bezierCurveTo(-size,size*0.6, 0,size*0.9,0,size);
+  ctx.bezierCurveTo(0,size*0.9, size,size*0.6, size,topCurveHeight);
+  ctx.bezierCurveTo(size,-size*0.35,0,-size*0.35,0,topCurveHeight);
+  ctx.closePath();
+  ctx.fillStyle="#ff4d6d";
+  ctx.fill();
+  ctx.fillStyle="#fff";
+  ctx.font=`${size/3}px Vazirmatn`;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText("سوگل",0,size*0.15);
+  ctx.restore();
+}
+
+function drawGame(){
+  ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
+  gifts.forEach(g=>{
+    drawHeart(ctx,g.x,g.y,g.size);
+  });
+}
+
 function startGame(){
   gameCanvas.width=window.innerWidth;
   gameCanvas.height=window.innerHeight;
@@ -140,23 +168,13 @@ function startGame(){
     gifts.push({
       x:Math.random()*gameCanvas.width,
       y:Math.random()*gameCanvas.height,
-      size:30 + Math.random()*20
+      size:40 + Math.random()*20
     });
   }
 
   drawGame();
   gameCanvas.style.pointerEvents='auto';
   gameCanvas.addEventListener('click',clickHandler);
-}
-
-function drawGame(){
-  ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
-  gifts.forEach(g=>{
-    ctx.fillStyle="#ffcc00";
-    ctx.beginPath();
-    ctx.arc(g.x,g.y,g.size/2,0,Math.PI*2);
-    ctx.fill();
-  });
 }
 
 function clickHandler(e){
@@ -167,7 +185,7 @@ function clickHandler(e){
     const g=gifts[i];
     const dx=g.x-x;
     const dy=g.y-y;
-    if(Math.sqrt(dx*dx+dy*dy)<g.size/2){
+    if(Math.sqrt(dx*dx+dy*dy)<g.size){
       gifts.splice(i,1);
       score++;
       scoreDiv.textContent="هدایا جمع شده: "+score;
